@@ -5,6 +5,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+
+using Microsoft.Data.Sqlite;
+
 using PERP_CommLibrary;
 
 namespace PersonalERP_Server
@@ -12,10 +15,12 @@ namespace PersonalERP_Server
     internal class PERP_CommModel : IPERP_CommModel
     {
         public static List<dynamic> Modules;
+        public static SqliteConnection sql;
 
-        public static void Initialize()
+        public static void Initialize(SqliteConnection sql_conn)
         {
             Modules = new List<dynamic>();
+            sql = sql_conn;
         }
 
         public byte[] DownloadModule(string ModuleName)

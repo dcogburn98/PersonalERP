@@ -25,7 +25,6 @@ namespace PERP_Accounting
         public void SetProxy(PERP_API_Contract proxy)
         {
             api = proxy;
-            api.Log("How bout here?");
         }
 
         private void button1_Click(object sender, EventArgs e)

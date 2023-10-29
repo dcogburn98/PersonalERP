@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using Microsoft.Data.Sqlite;
 using System.Net;
 using System.Net.Sockets;
 using System.Reflection;
@@ -14,9 +15,11 @@ namespace PersonalERP_Server
     internal class Program
     {
         public static List<string> Modules = new List<string>();
+        public static SqliteConnection sql;
+
         public static void Main(string[] args)
         {
-            #region First Run
+            //Create the modules folder if it doesn't exist already
             string ModulesDir = Path.Combine(Directory.GetCurrentDirectory(), "Modules");
             if (!Directory.Exists(ModulesDir))
             {
@@ -24,12 +27,18 @@ namespace PersonalERP_Server
                 Console.WriteLine("'Modules' directory created successfully. You can add modules at " + ModulesDir);
                 Console.WriteLine("It is recommended to do that, this software doesn't do much of anything without modules.");
             }
-            #endregion
 
-            PERP_CommModel.Initialize();
+            //Initialize the database connection with SQLite
+            sql = new SqliteConnection(
+              @"Data Source=database.db; 
+                Pooling = true;");
+            PERP_CommModel.Initialize(sql);
+
+            //Obtain the external IP address of the server
             string externalIpString = new WebClient().DownloadString("http://icanhazip.com").Replace("\\r\\n", "").Replace("\\n", "").Trim();
             IPAddress externalIp = IPAddress.Parse(externalIpString);
 
+            //Load all valid modules
             foreach (string module in Directory.EnumerateFiles(ModulesDir))
             {
                 if (!module.EndsWith(".dll"))
@@ -54,7 +63,7 @@ namespace PersonalERP_Server
                     Console.WriteLine("Here is a list of assemblies referenced by this module:");
                     Console.ForegroundColor = ConsoleColor.Yellow;
                     foreach (AssemblyName str in Module.GetReferencedAssemblies())
-                        Console.WriteLine(str.Name);
+                        Console.WriteLine("  " + str.Name);
                     Console.ForegroundColor = ConsoleColor.White;
 
                     dynamic c = Activator.CreateInstance(type);

@@ -8,6 +8,9 @@ using PERP_API;
 
 namespace PERP_Accounting
 {
+    /// <summary>
+    /// These methods and properties can be edited as seen fit by the module creator.
+    /// </summary>
     internal partial class PERP_Module : Module
     {
         public override string ModuleName => "Accounting"; //The module name as listed on clients' windows.
@@ -28,7 +31,7 @@ namespace PERP_Accounting
         /// </summary>
         public override void Help()
         {
-            Console.WriteLine("Welcome to my new module!");
+            Console.WriteLine("Accounting module!");
         }
     }
 
