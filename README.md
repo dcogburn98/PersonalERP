@@ -1,4 +1,7 @@
 # PersonalERP
+PersonalERP is a modular system whose name is a little misleading. It can be used as an ERP, and that is the type of modules I will be developing for it. It can be used in an enterprise setting, or it could be used in your personal life to assist with anything. It all depends on the installed modules.
+
+PersonalERP is only a software that provides a method of centralizing all components and data contained in the system. It allows you to have a server distributing modules to clients connected over a network.
 
 ## Creating Modules
 PersonalERP makes it easy to create new modules that can be added on the server and automatically distributed to clients. Not only that, but modules have a UI that is designed with the familiar WinForms designer. Here are the simple steps to creating a module:
@@ -15,27 +18,28 @@ public partial class MainForm : Form
     {
         private PERP_API_Contract api;
 
-        public MainForm()
+        public MainForm(PERP_API_Contract proxy)
         {
             InitializeComponent();
-        }
-
-        public void SetProxy(PERP_API_Contract proxy)
-        {
             api = proxy;
+            FormClosing += MainForm_FormClosing;
         }
 
-        private void button1_Click(object sender, EventArgs e)
+        /// <summary>
+        /// This method keeps the form from disposing when it is closed. Required to 
+        /// keep the "EntryForm" property alive in the PERP_Module class.
+        /// </summary>
+        private void MainForm_FormClosing(object sender, FormClosingEventArgs e)
         {
-            api.Log("Module can communicate with the server API.");
+            this.Hide();
+            e.Cancel = true;
         }
     }
 ```
-And then add a button and a click event handler that refers to the button1_Click methodto the designer.
 
 #### Replace your "PERP_Module.cs" class with this code:
 ``` C#
-/// <summary>
+    /// <summary>
     /// These methods and properties can be edited as seen fit by the module creator.
     /// </summary>
     internal partial class PERP_Module : Module
@@ -81,11 +85,12 @@ And then add a button and a click event handler that refers to the button1_Click
         /// </summary>
         public override void ClientMain()
         {
-            EntryForm = new MainForm();
-            (EntryForm as MainForm).SetProxy(proxy);
+            EntryForm = new MainForm(proxy);
         }
     }
 ```
 
 #### Change your project settings
 Go to your project settings for your module and change the "Output Type" to "Class Library". Now when you compile your code, you will get a dll that can be put in the "Modules" folder of your server installation. Or if you have the entire client and server project loaded into visual studio, set the output path of your module to the the bin/modules folder of the server project. Then building your module will automatically be "installed" for the server when you run the project.
+
+The PERP_DatabaseBrowser project is a good place to start digging and finding out exactly how a module works and interfaces with the client and server separately.
