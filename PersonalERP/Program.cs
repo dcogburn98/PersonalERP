@@ -33,6 +33,10 @@ namespace PersonalERP_Server
               @"Data Source=database.db; 
                 Pooling = true;");
             PERP_CommModel.Initialize(sql);
+            PERP_APIModel.Initialize(sql);
+            sql.Open();
+            sql.Close();
+            Console.WriteLine("Database initialized.");
 
             //Obtain the external IP address of the server
             string externalIpString = new WebClient().DownloadString("http://icanhazip.com").Replace("\\r\\n", "").Replace("\\n", "").Trim();

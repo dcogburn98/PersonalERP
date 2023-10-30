@@ -13,6 +13,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PersonalERP_Client", "Perso
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PERP_API", "PERP_API\PERP_API.csproj", "{46E8F8B3-E6EE-48A8-AFBE-51289872444F}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PERP_DatabaseBrowser", "PERP_DatabaseBrowser\PERP_DatabaseBrowser.csproj", "{F4C42076-3611-4956-B056-0CEC450AA8A8}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -61,6 +63,14 @@ Global
 		{46E8F8B3-E6EE-48A8-AFBE-51289872444F}.Release|Any CPU.Build.0 = Release|Any CPU
 		{46E8F8B3-E6EE-48A8-AFBE-51289872444F}.Release|x64.ActiveCfg = Release|Any CPU
 		{46E8F8B3-E6EE-48A8-AFBE-51289872444F}.Release|x64.Build.0 = Release|Any CPU
+		{F4C42076-3611-4956-B056-0CEC450AA8A8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F4C42076-3611-4956-B056-0CEC450AA8A8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F4C42076-3611-4956-B056-0CEC450AA8A8}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{F4C42076-3611-4956-B056-0CEC450AA8A8}.Debug|x64.Build.0 = Debug|Any CPU
+		{F4C42076-3611-4956-B056-0CEC450AA8A8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F4C42076-3611-4956-B056-0CEC450AA8A8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F4C42076-3611-4956-B056-0CEC450AA8A8}.Release|x64.ActiveCfg = Release|Any CPU
+		{F4C42076-3611-4956-B056-0CEC450AA8A8}.Release|x64.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

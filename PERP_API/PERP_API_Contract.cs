@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Linq;
 using System.ServiceModel;
 using System.Text;
@@ -12,5 +13,11 @@ namespace PERP_API
     {
         [OperationContract]
         void Log(string Message);
+
+        [OperationContract]
+        List<string> DB_ListTables();
+
+        [OperationContract]
+        DataTable DB_GetTableSchema(string TableName);
     }
 }
