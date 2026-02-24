@@ -21,9 +21,9 @@ namespace PERP_TaskManager
             InitializeComponent();
             api = proxy;
             FormClosing += MainForm_FormClosing;
-            cmbFilter.SelectedIndex = 0;
 
             EnsureTableExists();
+            cmbFilter.SelectedIndex = 0;
             RefreshTasks();
         }
 

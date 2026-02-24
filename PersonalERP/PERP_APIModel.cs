@@ -43,23 +43,43 @@ namespace PersonalERP_Server
             return TableNames;
         }
 
+        private void ValidateSqlCommand(string sqlText)
+        {
+            string upperSql = sqlText.ToUpper().Trim();
+            if (upperSql.StartsWith("DROP ") || upperSql.Contains("; DROP "))
+            {
+                throw new InvalidOperationException("DROP commands are not allowed for security reasons");
+            }
+            if (upperSql.StartsWith("TRUNCATE ") || upperSql.Contains("; TRUNCATE "))
+            {
+                throw new InvalidOperationException("TRUNCATE commands are not allowed for security reasons");
+            }
+        }
+
         public DataTable DB_GetTableSchema(string tableName)
         {
             sql.Open();
-
-            SqliteCommand command = sql.CreateCommand();
-            command.CommandText = $"SELECT * FROM {tableName};";
-
-            using (SqliteDataReader reader = command.ExecuteReader())
+            try
             {
-                DataTable schemaTable = new DataTable(tableName);
-                schemaTable.Load(reader);
-                return schemaTable;
+                SqliteCommand command = sql.CreateCommand();
+                command.CommandText = $"SELECT * FROM {tableName};";
+
+                using (SqliteDataReader reader = command.ExecuteReader())
+                {
+                    DataTable schemaTable = new DataTable(tableName);
+                    schemaTable.Load(reader);
+                    return schemaTable;
+                }
+            }
+            finally
+            {
+                sql.Close();
             }
         }
 
         public int DB_ExecuteNonQuery(string sqlText)
         {
+            ValidateSqlCommand(sqlText);
             sql.Open();
             try
             {
@@ -76,6 +96,7 @@ namespace PersonalERP_Server
 
         public DataTable DB_ExecuteQuery(string sqlText)
         {
+            ValidateSqlCommand(sqlText);
             sql.Open();
             try
             {
