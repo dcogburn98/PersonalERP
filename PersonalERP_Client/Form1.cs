@@ -43,34 +43,48 @@ namespace PersonalERP_Client
             if (!Directory.Exists(ModulesDir))
                 Directory.CreateDirectory(ModulesDir);
 
-            foreach (string item in proxy.ListModules())
+            try
             {
-                if (!APIProxy.HasPermission(sessionToken, item, "view"))
-                    continue;
+                foreach (string item in proxy.ListModules())
+                {
+                    if (!APIProxy.HasPermission(sessionToken, item, "view"))
+                        continue;
 
-                listBox1.Items.Add(item);
-                byte[] ModuleFile = proxy.DownloadModule(item);
-                string ModulePath = Path.Combine(ModulesDir, item + ".dll");
-                File.WriteAllBytes(ModulePath, ModuleFile);
+                    listBox1.Items.Add(item);
 
-                Assembly ModuleAssembly = Assembly.LoadFile(ModulePath);
-                Type type = ModuleAssembly.GetTypes().ToList()
-                    .FirstOrDefault(el => el.Name.Contains("PERP_Module"));
-                dynamic c = Activator.CreateInstance(type);
-                c.proxy = APIProxy;
-                c.SessionToken = sessionToken;
-                c.CurrentUser = currentUser;
-                c.ClientMain();
-                Modules.Add(c);
+                    try
+                    {
+                        byte[] ModuleFile = proxy.DownloadModule(item);
+                        string ModulePath = Path.Combine(ModulesDir, item + ".dll");
+                        File.WriteAllBytes(ModulePath, ModuleFile);
+
+                        Assembly ModuleAssembly = Assembly.LoadFile(ModulePath);
+                        Type type = ModuleAssembly.GetTypes().ToList()
+                            .FirstOrDefault(el => el.Name.Contains("PERP_Module"));
+                        dynamic c = Activator.CreateInstance(type);
+                        c.proxy = APIProxy;
+                        c.SessionToken = sessionToken;
+                        c.CurrentUser = currentUser;
+                        c.ClientMain();
+                        Modules.Add(c);
+                    }
+                    catch (Exception ex)
+                    {
+                        MessageBox.Show($"Error loading module '{item}': {ex.Message}",
+                            "Module Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error connecting to server: {ex.Message}",
+                    "Connection Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
             }
         }
 
         public static void SetCommModelEndpointAddress(string newAddress)
         {
-            EndpointIdentity spn = EndpointIdentity.CreateSpnIdentity("PERP_Endpoint");
-            Uri uri = new Uri(newAddress);
-            var address = new EndpointAddress(uri, spn);
-            channelFactory = new ChannelFactory<IPERP_CommModel>("PERP_Endpoint", address);
+            channelFactory = new ChannelFactory<IPERP_CommModel>("PERP_Endpoint");
             proxy = channelFactory.CreateChannel();
         }
 
