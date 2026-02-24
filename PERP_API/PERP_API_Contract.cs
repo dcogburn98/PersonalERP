@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
@@ -19,5 +19,11 @@ namespace PERP_API
 
         [OperationContract]
         DataTable DB_GetTableSchema(string TableName);
+
+        [OperationContract]
+        int DB_ExecuteNonQuery(string sql);
+
+        [OperationContract]
+        DataTable DB_ExecuteQuery(string sql);
     }
 }

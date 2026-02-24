@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
@@ -49,13 +49,48 @@ namespace PersonalERP_Server
 
             SqliteCommand command = sql.CreateCommand();
             command.CommandText = $"SELECT * FROM {tableName};";
-            //command.Parameters.Add(new SqliteParameter("$TABLENAME", tableName));
 
             using (SqliteDataReader reader = command.ExecuteReader())
             {
                 DataTable schemaTable = new DataTable(tableName);
                 schemaTable.Load(reader);
                 return schemaTable;
+            }
+        }
+
+        public int DB_ExecuteNonQuery(string sqlText)
+        {
+            sql.Open();
+            try
+            {
+                SqliteCommand command = sql.CreateCommand();
+                command.CommandText = sqlText;
+                int result = command.ExecuteNonQuery();
+                return result;
+            }
+            finally
+            {
+                sql.Close();
+            }
+        }
+
+        public DataTable DB_ExecuteQuery(string sqlText)
+        {
+            sql.Open();
+            try
+            {
+                SqliteCommand command = sql.CreateCommand();
+                command.CommandText = sqlText;
+                using (SqliteDataReader reader = command.ExecuteReader())
+                {
+                    DataTable result = new DataTable();
+                    result.Load(reader);
+                    return result;
+                }
+            }
+            finally
+            {
+                sql.Close();
             }
         }
     }
