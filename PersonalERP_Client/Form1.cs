@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
@@ -21,55 +21,71 @@ namespace PersonalERP_Client
         private static List<dynamic> Modules;
         private static ChannelFactory<IPERP_CommModel> channelFactory;
         private static IPERP_CommModel proxy;
-        private static ChannelFactory<PERP_API_Contract> APIFactory;
         private static PERP_API_Contract APIProxy;
+        private string sessionToken;
+        private UserInfo currentUser;
 
-        public static void SetCommModelEndpointAddress(string newAddress)
-        {
-            EndpointIdentity spn = EndpointIdentity.CreateSpnIdentity("PERP_Endpoint");
-            Uri uri = new Uri(newAddress);
-            var address = new EndpointAddress(uri, spn);
-            channelFactory = new ChannelFactory<IPERP_CommModel>("PERP_Endpoint", address);
-            proxy = channelFactory.CreateChannel();
-        }
-
-        public static void SetAPIEndpointAddress(string newAddress)
-        {
-            EndpointIdentity spn = EndpointIdentity.CreateSpnIdentity("PERP_API_Endpoint");
-            Uri uri = new Uri(newAddress);
-            var address = new EndpointAddress(uri, spn);
-            APIFactory = new ChannelFactory<PERP_API_Contract>("PERP_API_Endpoint", address);
-            APIProxy = APIFactory.CreateChannel();
-        }
-
-        public Form1()
+        public Form1(PERP_API_Contract apiProxy, string token, UserInfo user)
         {
             Modules = new List<dynamic>();
+            APIProxy = apiProxy;
+            sessionToken = token;
+            currentUser = user;
 
             InitializeComponent();
+
+            this.Text = $"PersonalERP - {currentUser.DisplayName} ({currentUser.Role})";
+            lblUser.Text = $"Logged in as: {currentUser.DisplayName} [{currentUser.Role}]";
+
             SetCommModelEndpointAddress("http://localhost:3740/endpoint");
-            SetAPIEndpointAddress("http://localhost:3443/endpoint");
 
             string ModulesDir = Path.Combine(Directory.GetCurrentDirectory(), "Modules");
             if (!Directory.Exists(ModulesDir))
-            {
                 Directory.CreateDirectory(ModulesDir);
-            }
 
-            foreach (string item in proxy.ListModules())
+            try
             {
-                listBox1.Items.Add(item);
-                byte[] ModuleFile = proxy.DownloadModule(item);
-                string ModulePath = Path.Combine(Directory.GetCurrentDirectory(), "Modules", item + ".dll");
-                File.WriteAllBytes(ModulePath, ModuleFile);
+                foreach (string item in proxy.ListModules())
+                {
+                    if (!APIProxy.HasPermission(sessionToken, item, "view"))
+                        continue;
 
-                Assembly ModuleAssembly = Assembly.LoadFile(ModulePath);
-                Type type = ModuleAssembly.GetTypes().ToList().FirstOrDefault(el => el.Name.Contains("PERP_Module"));
-                dynamic c = Activator.CreateInstance(type);
-                c.proxy = APIProxy;
-                c.ClientMain();
-                Modules.Add(c);
+                    listBox1.Items.Add(item);
+
+                    try
+                    {
+                        byte[] ModuleFile = proxy.DownloadModule(item);
+                        string ModulePath = Path.Combine(ModulesDir, item + ".dll");
+                        File.WriteAllBytes(ModulePath, ModuleFile);
+
+                        Assembly ModuleAssembly = Assembly.LoadFile(ModulePath);
+                        Type type = ModuleAssembly.GetTypes().ToList()
+                            .FirstOrDefault(el => el.Name.Contains("PERP_Module"));
+                        dynamic c = Activator.CreateInstance(type);
+                        c.proxy = APIProxy;
+                        c.SessionToken = sessionToken;
+                        c.CurrentUser = currentUser;
+                        c.ClientMain();
+                        Modules.Add(c);
+                    }
+                    catch (Exception ex)
+                    {
+                        MessageBox.Show($"Error loading module '{item}': {ex.Message}",
+                            "Module Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    }
+                }
             }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error connecting to server: {ex.Message}",
+                    "Connection Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            }
+        }
+
+        public static void SetCommModelEndpointAddress(string newAddress)
+        {
+            channelFactory = new ChannelFactory<IPERP_CommModel>("PERP_Endpoint");
+            proxy = channelFactory.CreateChannel();
         }
 
         private void listBox1_MouseDoubleClick(object sender, MouseEventArgs e)
@@ -77,7 +93,16 @@ namespace PersonalERP_Client
             if (listBox1.SelectedIndex == -1)
                 return;
 
-            Modules.FirstOrDefault(el => el.ModuleName == listBox1.SelectedItem.ToString()).EntryForm.Show();
+            string modName = listBox1.SelectedItem.ToString();
+            var mod = Modules.FirstOrDefault(el => el.ModuleName == modName);
+            if (mod != null)
+                mod.EntryForm.Show();
+        }
+
+        private void btnLogout_Click(object sender, EventArgs e)
+        {
+            try { APIProxy.Logout(sessionToken); } catch { }
+            Application.Restart();
         }
     }
 }

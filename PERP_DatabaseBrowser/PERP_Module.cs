@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -48,7 +48,7 @@ namespace PERP_DatabaseBrowser
         /// </summary>
         public override void ClientMain()
         {
-            EntryForm = new MainForm(proxy);
+            EntryForm = new MainForm(proxy, SessionToken, CurrentUser);
         }
     }
 }
