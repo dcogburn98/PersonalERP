@@ -33,7 +33,7 @@ namespace PERP_TaskManager
 
         public override void ClientMain()
         {
-            EntryForm = new MainForm(proxy);
+            EntryForm = new MainForm(proxy, SessionToken, CurrentUser);
         }
     }
 }

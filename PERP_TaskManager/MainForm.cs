@@ -14,14 +14,24 @@ namespace PERP_TaskManager
     public partial class MainForm : Form
     {
         private PERP_API_Contract api;
+        private string sessionToken;
+        private UserInfo currentUser;
         private const string TABLE_NAME = "perp_tasks";
 
-        public MainForm(PERP_API_Contract proxy)
+        public MainForm(PERP_API_Contract proxy, string token = null, UserInfo user = null)
         {
             InitializeComponent();
             api = proxy;
+            sessionToken = token;
+            currentUser = user;
             FormClosing += MainForm_FormClosing;
             cmbFilter.SelectedIndex = 0;
+
+            bool canEdit = currentUser == null || currentUser.Role != "Viewer";
+            btnAdd.Enabled = canEdit;
+            btnMarkInProgress.Enabled = canEdit;
+            btnMarkDone.Enabled = canEdit;
+            btnDelete.Enabled = canEdit;
 
             EnsureTableExists();
             RefreshTasks();

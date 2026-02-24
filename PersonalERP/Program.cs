@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -19,93 +19,124 @@ namespace PersonalERP_Server
 
         public static void Main(string[] args)
         {
-            //Create the modules folder if it doesn't exist already
+            Console.ForegroundColor = ConsoleColor.Cyan;
+            Console.WriteLine("╔══════════════════════════════════════╗");
+            Console.WriteLine("║        PersonalERP Server            ║");
+            Console.WriteLine("╚══════════════════════════════════════╝");
+            Console.ForegroundColor = ConsoleColor.White;
+
             string ModulesDir = Path.Combine(Directory.GetCurrentDirectory(), "Modules");
             if (!Directory.Exists(ModulesDir))
             {
                 Directory.CreateDirectory(ModulesDir);
-                Console.WriteLine("'Modules' directory created successfully. You can add modules at " + ModulesDir);
-                Console.WriteLine("It is recommended to do that, this software doesn't do much of anything without modules.");
+                Console.WriteLine("'Modules' directory created at " + ModulesDir);
             }
 
-            //Initialize the database connection with SQLite
-            sql = new SqliteConnection(
-              @"Data Source=database.db; 
-                Pooling = true;");
+            sql = new SqliteConnection(@"Data Source=database.db; Pooling = true;");
             PERP_CommModel.Initialize(sql);
             PERP_APIModel.Initialize(sql);
+            AuthManager.Initialize(sql);
+            TaskSchedulerEngine.Initialize(sql);
+
             sql.Open();
             sql.Close();
-            Console.WriteLine("Database initialized.");
+            Console.WriteLine("Database connection verified.");
 
-            //Obtain the external IP address of the server
-            string externalIpString = new WebClient().DownloadString("http://icanhazip.com").Replace("\\r\\n", "").Replace("\\n", "").Trim();
-            IPAddress externalIp = IPAddress.Parse(externalIpString);
+            SchemaManager.InitializeSchema(sql);
+            SchemaManager.SeedDefaults(sql);
 
-            //Load all valid modules
+            SeedDefaultScheduledTasks();
+
             foreach (string module in Directory.EnumerateFiles(ModulesDir))
             {
                 if (!module.EndsWith(".dll"))
                     continue;
 
                 var Module = Assembly.LoadFile(module);
-
                 Type type = Module.GetTypes().ToList().FirstOrDefault(el => el.Name.Contains("PERP_Module"));
                 if (type == default)
                 {
                     Console.ForegroundColor = ConsoleColor.Red;
                     Console.WriteLine("Invalid module: " + Path.GetFileName(module));
                     Console.ForegroundColor = ConsoleColor.White;
-                    Console.WriteLine();
                     continue;
                 }
-                else
-                {
-                    Console.ForegroundColor = ConsoleColor.Green;
-                    Console.WriteLine("Succesfully loaded module: " + Path.GetFileName(module));
-                    Console.ForegroundColor = ConsoleColor.White;
-                    Console.WriteLine("Here is a list of assemblies referenced by this module:");
-                    Console.ForegroundColor = ConsoleColor.Yellow;
-                    foreach (AssemblyName str in Module.GetReferencedAssemblies())
-                        Console.WriteLine("  " + str.Name);
-                    Console.ForegroundColor = ConsoleColor.White;
 
-                    dynamic c = Activator.CreateInstance(type);
-                    c.ServerMain();
-                    PERP_CommModel.Modules.Add(c);
-                }
+                Console.ForegroundColor = ConsoleColor.Green;
+                Console.WriteLine("Loaded module: " + Path.GetFileName(module));
+                Console.ForegroundColor = ConsoleColor.White;
+
+                dynamic c = Activator.CreateInstance(type);
+                c.ServerMain();
+                PERP_CommModel.Modules.Add(c);
             }
 
             Console.WriteLine("Starting PERP client service...");
             ServiceHost host = new ServiceHost(typeof(PERP_CommModel));
             host.Open();
-            Console.WriteLine("Server is open for connections from PERP clients.");
+            Console.WriteLine("Client service open on port 3740.");
 
             Console.WriteLine("Starting PERP API service...");
             ServiceHost APIHost = new ServiceHost(typeof(PERP_APIModel));
             APIHost.Open();
-            Console.WriteLine("API service is open for connections from PERP modules.");
+            Console.WriteLine("API service open on port 3443.");
+
+            TaskSchedulerEngine.Start();
 
             Console.ForegroundColor = ConsoleColor.Green;
+            Console.WriteLine();
             Console.WriteLine("Internal IP: " + GetLocalIPAddress());
-            Console.WriteLine("External IP: " + externalIp.ToString());
+            try
+            {
+                string externalIpString = new WebClient()
+                    .DownloadString("http://icanhazip.com")
+                    .Replace("\\r\\n", "").Replace("\\n", "").Trim();
+                Console.WriteLine("External IP: " + externalIpString);
+            }
+            catch { Console.WriteLine("External IP: (unavailable)"); }
             Console.WriteLine();
             Console.ForegroundColor = ConsoleColor.White;
 
+            Console.WriteLine("Server running. Press Enter to stop.");
             Console.ReadLine();
+
+            TaskSchedulerEngine.Stop();
+        }
+
+        private static void SeedDefaultScheduledTasks()
+        {
+            sql.Open();
+            try
+            {
+                var cmd = sql.CreateCommand();
+                cmd.CommandText = "SELECT COUNT(*) FROM perp_scheduled_tasks";
+                long count = (long)cmd.ExecuteScalar();
+                if (count > 0) return;
+            }
+            finally { sql.Close(); }
+
+            TaskSchedulerEngine.Register(
+                "Session Cleanup", "System", "Remove expired login sessions",
+                "CLEANUP_SESSIONS", "", 3600, null);
+
+            TaskSchedulerEngine.Register(
+                "History Cleanup", "System", "Remove task history older than 30 days",
+                "CLEANUP_HISTORY", "30", 86400, null);
+
+            Console.WriteLine("Default scheduled tasks registered.");
         }
 
         public static string GetLocalIPAddress()
         {
-            IPHostEntry host = Dns.GetHostEntry(Dns.GetHostName());
-            foreach (var ip in host.AddressList)
+            try
             {
-                if (ip.AddressFamily == AddressFamily.InterNetwork)
-                {
-                    return ip.ToString();
-                }
+                IPHostEntry host = Dns.GetHostEntry(Dns.GetHostName());
+                foreach (var ip in host.AddressList)
+                    if (ip.AddressFamily == AddressFamily.InterNetwork)
+                        return ip.ToString();
             }
-            throw new Exception("No network adapters with an IPv4 address in the system!");
+            catch { }
+            return "127.0.0.1";
         }
     }
 }

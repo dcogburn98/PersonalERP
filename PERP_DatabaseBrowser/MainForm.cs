@@ -15,11 +15,15 @@ namespace PERP_DatabaseBrowser
     public partial class MainForm : Form
     {
         private PERP_API_Contract api;
+        private string sessionToken;
+        private UserInfo currentUser;
 
-        public MainForm(PERP_API_Contract proxy)
+        public MainForm(PERP_API_Contract proxy, string token = null, UserInfo user = null)
         {
             InitializeComponent();
             api = proxy;
+            sessionToken = token;
+            currentUser = user;
             FormClosing += MainForm_FormClosing;
             comboBox1.SelectedIndexChanged += comboBox1_SelectedIndexChanged;
             btnRefresh.Click += btnRefresh_Click;
