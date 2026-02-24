@@ -33,7 +33,7 @@ namespace PERP_TaskManager
             btnMarkDone.Enabled = canEdit;
             btnDelete.Enabled = canEdit;
 
-            EnsureTableExists();
+            try { EnsureTableExists(); } catch { }
             RefreshTasks();
         }
 

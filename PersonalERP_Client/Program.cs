@@ -16,9 +16,7 @@ namespace PersonalERP_Client
             PERP_API_Contract apiProxy;
             try
             {
-                EndpointIdentity spn = EndpointIdentity.CreateSpnIdentity("PERP_API_Endpoint");
-                var address = new EndpointAddress(new Uri("http://localhost:3443/endpoint"), spn);
-                var factory = new ChannelFactory<PERP_API_Contract>("PERP_API_Endpoint", address);
+                var factory = new ChannelFactory<PERP_API_Contract>("PERP_API_Endpoint");
                 apiProxy = factory.CreateChannel();
             }
             catch (Exception ex)
